@@ -43,10 +43,12 @@ public class MainActivity extends ActionBarActivity {
             onNewCell((short) cellLocation.getCid());
         }
     };
+
     /**
-     *
+     * Database access
      */
     private DepartureDataSource dataSource;
+
     // Views
     private TextView textDir1Value1;
     private TextView textDir1Value2;
@@ -68,18 +70,25 @@ public class MainActivity extends ActionBarActivity {
     private TextView textNoStationError;
     private View layoutMetroInfo;
     private TextView textCatch;
+
     /**
      * Telephony manager
      */
     private TelephonyManager tm;
+
     /**
      * Upcoming departures for direction 1
      */
     private MyTime[] upDepDir1;
+
     /**
      * Upcoming departures for direction 2
      */
     private MyTime[] upDepDir2;
+
+    /**
+     * Receiver for measure service data
+     */
     private BroadcastReceiver measureReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -87,7 +96,9 @@ public class MainActivity extends ActionBarActivity {
             if (bundle != null) {
                 Double meters = bundle.getDouble(MeasureService.UPDATE_MESSAGE);
                 if (meters != null) {
+                    // Display whether the user will catch the train or not
                     displayCatch(meters);
+                    // Display remaining meters
                     textCatch.setText(meters + "");
                 } else {
                     displayCatch(-1d);
@@ -131,15 +142,6 @@ public class MainActivity extends ActionBarActivity {
         dir2val1Rem.setText("");
         dir2val2Rem.setText("");
         dir2val3Rem.setText("");
-
-        // Find out whether
-        Bundle bundle = getIntent().getExtras();
-        if (bundle != null && bundle.containsKey(NOTIFICATION)) {
-            // Activity was started from notification
-            Log.d(TAG, "Activity was started from notification");
-        } else {
-            Log.d(TAG, "Activity was not started from notification");
-        }
 
         // Button for activity measure
         findViewById(R.id.buttonScanActivity).setOnClickListener(new View.OnClickListener() {
@@ -187,10 +189,15 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    /**
+     * When new cell is available
+     *
+     * @param cid
+     */
     private void onNewCell(int cid) {
         dataSource.open();
         int stationID = dataSource.getStationIDByCellID(cid);
-        if (stationID != -1) { // TODO nezobrazovat znova stejnou stanici.. ?? dobre pro refresh casu ale narocne? && stationID != activeStation) {
+        if (stationID != -1) { // TODO nezobrazovat znova stejnou stanici.. ?? dobre pro refresh casu ale narocne?  && stationID != activeStation) {
 
             Station station = dataSource.getStationByID(stationID);
             dataSource.close();
@@ -200,6 +207,7 @@ public class MainActivity extends ActionBarActivity {
                 // Save ID for future uses
                 PrefManager.setLastStationID(this, stationID);
 
+                // Process station info and display it
                 processStation(station);
             }
         } else {
@@ -207,6 +215,12 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    /**
+     * Contvert string array of number to int array
+     *
+     * @param array
+     * @return
+     */
     private int[] convertToIntArray(String[] array) {
         if (array == null) {
             return null;
@@ -218,17 +232,23 @@ public class MainActivity extends ActionBarActivity {
         return result;
     }
 
+    /**
+     * Process station info, find out next departures and display it to the user
+     *
+     * @param station
+     */
     private void processStation(Station station) {
         // Adjust views, because in this point we want to show the station info :)
         textNoStationError.setVisibility(View.GONE);
         layoutMetroInfo.setVisibility(View.VISIBLE);
-        int activeStation = station.getId();
 
+        // Find out today time
         Calendar now = Calendar.getInstance();
         int minutesFromMidnight = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
         int today = now.get(Calendar.DAY_OF_WEEK);
         Log.d(TAG, "Day of week is " + today);
 
+        // Determine day type
         DayType dayType;
         if (today == 1) {
             dayType = DayType.NE;
@@ -244,11 +264,14 @@ public class MainActivity extends ActionBarActivity {
             }
         }
 
+        // Get upcoming departures
         MyTime[] upcomingDeparturesDir1 = getUpcommingDepartures(dayType, station, minutesFromMidnight, true);
         MyTime[] upcomingDeparturesDir2 = getUpcommingDepartures(dayType, station, minutesFromMidnight, false);
 
+        // Set station name
         textStationName.setText("Stanice - " + station.getName());
 
+        // Display upcoming departures for direction 1
         if (upcomingDeparturesDir1 != null) {
             layoutDir1.setVisibility(View.VISIBLE);
             textDir1Value1.setText(upcomingDeparturesDir1[0].getStringBasicTimeWithDelimiter());
@@ -261,6 +284,7 @@ public class MainActivity extends ActionBarActivity {
             layoutDir1.setVisibility(View.GONE);
         }
 
+        // Display upcoming departures for direction 2
         if (upcomingDeparturesDir2 != null) {
             layoutDir2.setVisibility(View.VISIBLE);
             textDir2Value1.setText(upcomingDeparturesDir2[0].getStringBasicTimeWithDelimiter());
@@ -273,10 +297,20 @@ public class MainActivity extends ActionBarActivity {
             layoutDir2.setVisibility(View.GONE);
         }
 
+        // Save departures data for localization
         this.upDepDir1 = upcomingDeparturesDir1;
         this.upDepDir2 = upcomingDeparturesDir2;
     }
 
+    /**
+     * Get upcomming departures from station data and actual times
+     *
+     * @param dayType
+     * @param station
+     * @param minutesFromMidnight
+     * @param isDirection1
+     * @return
+     */
     private MyTime[] getUpcommingDepartures(DayType dayType, Station station, int minutesFromMidnight, boolean isDirection1) {
         int[] departureTimes;
         if (isDirection1) {
@@ -362,6 +396,13 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    /**
+     * Get departures for direction 1
+     *
+     * @param dayType
+     * @param station
+     * @return
+     */
     private int[] getDepartures1ForDayType(DayType dayType, Station station) {
         switch (dayType) {
             case PO_CT: {
@@ -380,6 +421,13 @@ public class MainActivity extends ActionBarActivity {
         return null;
     }
 
+    /**
+     * Get departures for direction 2
+     *
+     * @param dayType
+     * @param station
+     * @return
+     */
     private int[] getDepartures2ForDayType(DayType dayType, Station station) {
         switch (dayType) {
             case PO_CT: {
@@ -398,6 +446,12 @@ public class MainActivity extends ActionBarActivity {
         return null;
     }
 
+    /**
+     * Get tomorrow daytype
+     *
+     * @param dayType
+     * @return
+     */
     private DayType getNextDayTypeFrom(DayType dayType) {
         switch (dayType) {
             case PO_CT: {
@@ -416,6 +470,13 @@ public class MainActivity extends ActionBarActivity {
         return null;
     }
 
+    /**
+     * Calculate whether the user catches the train or not and generate message
+     *
+     * @param depTime
+     * @param meters
+     * @return
+     */
     private String calculateCatch(MyTime depTime, Double meters) {
         Calendar nowCal = Calendar.getInstance();
         nowCal.set(Calendar.YEAR, 1970);
@@ -433,8 +494,6 @@ public class MainActivity extends ActionBarActivity {
         long now = nowCal.getTimeInMillis();
         long dep = depCal.getTimeInMillis();
         double result = 0;
-
-//        Log.d(TAG, "1 - Now: " + now + ", Dep: " + dep);
 
         // TODO This is for Karlak only
         if (meters < 50) {
@@ -456,8 +515,6 @@ public class MainActivity extends ActionBarActivity {
 
         now += result * 1000;
 
-//        Log.d(TAG, "2 - Now: " + now + ", Dep: " + dep);
-
         if (now >= dep + 10000) {
             return "Nestíháte, jeďte dalším";
         } else {
@@ -473,6 +530,11 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    /**
+     * Display catch message
+     *
+     * @param meters
+     */
     private void displayCatch(Double meters) {
         if (meters > 0 && upDepDir1 != null && MeasureService.isRunning) {
             dir1val1Rem.setText(calculateCatch(upDepDir1[0], meters));

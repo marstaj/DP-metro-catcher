@@ -25,42 +25,70 @@ public class MeasureService extends Service {
 
     public static final String UPDATE = "cz.marstaj.metrocatcher";
     public static final String UPDATE_MESSAGE = "UPDATE_MESSAGE";
+
+    /**
+     * Service TAG
+     */
     private static final String TAG = MeasureService.class.getSimpleName();
+
+    /**
+     * Flag whether the service is running or not
+     */
     public static boolean isRunning = false;
 
+    /**
+     * Time interval for switching windows
+     */
     private final int INTERVAL = 2100; // 2100 ms should be enough for 256 samples window = 8 ms per value
+
+    /**
+     * Window size
+     */
     private final int WINDOW_SIZE = 256;
+
+    // Calibrating values for different sections
     private final double step1 = 100;
     private final double step2 = 50;
     private final double step3 = 20;
     private final double step4 = 10;
+
+    // Speed values for different movements
     private final double floorSpeedPerWindow = 3.4; // 3.4m per 2s
     private final double escalatorSpeedPerWindow = 1.5; // 1.5 per 2s
     private final double escalatorWalkSpeedPerWindow = 2.7; //2.7m per 2s
+
+    /**
+     * Accelerometer object
+     */
     private ACCSensor accSensor;
+
+    /**
+     * Timer for switching data lists
+     */
     private Handler timer;
+
+    /**
+     * Time of last accelerometer value
+     */
     private long lastTime;
-    private ArrayList<Double> accData;
-    private ArrayList<Long> accTime;
+
+    // Saved accelerometer data
     private ArrayList<Double> accData1;
     private ArrayList<Long> accTime1;
+    private ArrayList<Double> accData2;
+    private ArrayList<Long> accTime2;
+
+    /**
+     * Movement neural network
+     */
     private MovementNeuralNetwork net;
-    Runnable switchLists = new Runnable() {
-        @Override
-        public void run() {
-            ArrayList<Double> tmpData = accData;
-            ArrayList<Long> tmpTime = accTime;
-
-            resetDataLists();
-            timer.postDelayed(switchLists, INTERVAL);
-
-            // Analyze window
-            double netResult = postProcessAccData(tmpData, tmpTime);
-            ClassType classType = getActionClassFromNetResult(netResult);
-            onNewClassType(classType);
-        }
-    };
+    /**
+     * Actual terrain type
+     */
     private TerrainType activeTerrain = TerrainType.UNKNOWN;
+    /**
+     * Switching data list 1
+     */
     Runnable switchLists1 = new Runnable() {
         @Override
         public void run() {
@@ -76,13 +104,41 @@ public class MeasureService extends Service {
             onNewClassType(classType);
         }
     };
+    // Station model variables
     private int classCount;
     private int classCountError;
+    /**
+     * Switching data list 2
+     */
+    Runnable switchLists2 = new Runnable() {
+        @Override
+        public void run() {
+            ArrayList<Double> tmpData = accData2;
+            ArrayList<Long> tmpTime = accTime2;
+
+            resetDataLists2();
+            timer.postDelayed(switchLists2, INTERVAL);
+
+            // Analyze window
+            double netResult = postProcessAccData(tmpData, tmpTime);
+            ClassType classType = getActionClassFromNetResult(netResult);
+            onNewClassType(classType);
+        }
+    };
     private double meters;
     private boolean wasStep1 = false;
     private boolean wasStep2 = false;
     private boolean wasStep3 = false;
 
+    /**
+     * Linear interpolation
+     *
+     * @param x
+     * @param y
+     * @param xi
+     * @return
+     * @throws IllegalArgumentException
+     */
     public static final double[] interpolateLinear(Long[] x, Double[] y, long[] xi) throws IllegalArgumentException {
 
         if (x.length != y.length) {
@@ -144,8 +200,8 @@ public class MeasureService extends Service {
 
         // Init
         timer = new Handler();
-        resetDataLists();
         resetDataLists1();
+        resetDataLists2();
         activeTerrain = TerrainType.UNKNOWN;
 
         accSensor = new ACCSensor(this, new OnACCReceivedListener() {
@@ -174,33 +230,52 @@ public class MeasureService extends Service {
         return START_STICKY;
     }
 
+    /**
+     * Start measuring acclerometer data
+     */
     private void startMeasure() {
-        timer.removeCallbacks(switchLists);
         timer.removeCallbacks(switchLists1);
-        resetDataLists();
+        timer.removeCallbacks(switchLists2);
         resetDataLists1();
+        resetDataLists2();
         lastTime = System.currentTimeMillis();
-        timer.postDelayed(switchLists, INTERVAL);
-        timer.postDelayed(switchLists1, INTERVAL + INTERVAL / 2); // Windowed moved by 50%
+        timer.postDelayed(switchLists1, INTERVAL);
+        timer.postDelayed(switchLists2, INTERVAL + INTERVAL / 2); // Windowed moved by 50%
         accSensor.start();
     }
 
+    /**
+     * Stop measuring acclerometer data
+     */
     private void endMeasure() {
         accSensor.stop();
-        timer.removeCallbacks(switchLists);
         timer.removeCallbacks(switchLists1);
+        timer.removeCallbacks(switchLists2);
     }
 
-    private void resetDataLists() {
-        accData = new ArrayList<Double>(300);
-        accTime = new ArrayList<Long>(300);
-    }
-
+    /**
+     * Reset data list 1
+     */
     private void resetDataLists1() {
         accData1 = new ArrayList<Double>(300);
         accTime1 = new ArrayList<Long>(300);
     }
 
+    /**
+     * Reset data list 2
+     */
+    private void resetDataLists2() {
+        accData2 = new ArrayList<Double>(300);
+        accTime2 = new ArrayList<Long>(300);
+    }
+
+    /**
+     * Save obtained accelerometer data
+     *
+     * @param x
+     * @param y
+     * @param z
+     */
     private void processAccData(double x, double y, double z) {
         // Ignore acc signal in the same milisecond
         long time = System.currentTimeMillis();
@@ -211,13 +286,20 @@ public class MeasureService extends Service {
             double mergedACC = mergeAcc(x, y, z);
 
             // Add to the list
-            accData.add(mergedACC);
             accData1.add(mergedACC);
-            accTime.add(time);
+            accData2.add(mergedACC);
             accTime1.add(time);
+            accTime2.add(time);
         }
     }
 
+    /**
+     * Analyze window for features and classify it
+     *
+     * @param data
+     * @param time
+     * @return
+     */
     private double postProcessAccData(ArrayList<Double> data, ArrayList<Long> time) {
         // ---------- LINEAR INTERPOLATION ----------
         long startTime = time.get(0);
@@ -304,6 +386,12 @@ public class MeasureService extends Service {
         return net.classifyMovement(features);
     }
 
+    /**
+     * Polish neural network result
+     *
+     * @param netResult
+     * @return
+     */
     private ClassType getActionClassFromNetResult(double netResult) {
         if (Double.isNaN(netResult)) {
             return null;
@@ -325,6 +413,11 @@ public class MeasureService extends Service {
         }
     }
 
+    /**
+     * On new classified window
+     *
+     * @param newClass
+     */
     private void onNewClassType(ClassType newClass) {
         if (newClass != null) {
             switch (activeTerrain) {
@@ -381,8 +474,10 @@ public class MeasureService extends Service {
 
             Log.i(TAG, "Meters: " + meters);
             if (meters >= 0) {
+                // Publish results to Main activity
                 publishResults(meters);
             } else {
+                // Publish results to Main activity
                 publishResults(meters);
                 endMeasure();
                 stopForeground(true);
@@ -391,6 +486,13 @@ public class MeasureService extends Service {
         }
     }
 
+    /**
+     * Check wheter there was an action change
+     *
+     * @param newClass
+     * @param wantedClass
+     * @return
+     */
     private boolean checkActionChange(ClassType newClass, TerrainType wantedClass) {
         boolean ok = false;
         if (wantedClass == TerrainType.ESCALATOR) {
@@ -423,6 +525,9 @@ public class MeasureService extends Service {
         return false;
     }
 
+    /**
+     * Send results to the Main activity
+     */
     private void publishResults(double meters) {
         Intent intent = new Intent(UPDATE);
         intent.putExtra(UPDATE_MESSAGE, meters);
@@ -451,6 +556,12 @@ public class MeasureService extends Service {
         isRunning = false;
     }
 
+    /**
+     * Exponential moving-average filter
+     *
+     * @param unfiltered
+     * @return
+     */
     private double[] ema(double[] unfiltered) {
         double[] filtered = new double[unfiltered.length];
 
@@ -466,13 +577,17 @@ public class MeasureService extends Service {
         return filtered;
     }
 
+    /**
+     * Merge 3-axis signal to 1-axis acceleration
+     *
+     * @param x
+     * @param y
+     * @param z
+     * @return
+     */
     private double mergeAcc(double x, double y, double z) {
         return Math.sqrt(x * x + y * y + z * z);
     }
-
-
-    // ---------------------------- METHODS ----------------------------
-
 
     private enum TerrainType {
         FLOOR, STAIRS, ESCALATOR, UNKNOWN

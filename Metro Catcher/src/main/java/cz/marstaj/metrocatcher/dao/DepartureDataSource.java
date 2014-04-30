@@ -14,25 +14,44 @@ import cz.marstaj.metrocatcher.model.Station;
 public class DepartureDataSource {
 
 
-    // Database fields
+    /**
+     * Database object
+     */
     private SQLiteDatabase database;
+
+    /**
+     * Database helper
+     */
     private MySQLiteHelper dbHelper;
 
     public DepartureDataSource(Context context) {
         dbHelper = new MySQLiteHelper(context);
     }
 
+    /**
+     * Open connection to the database
+     *
+     * @throws SQLException
+     */
     public void open() throws SQLException {
         Log.w(DepartureDataSource.class.getName(), "Opening DB");
         database = dbHelper.getWritableDatabase();
     }
 
+    /**
+     * Close connection to the database
+     */
     public void close() {
         Log.w(DepartureDataSource.class.getName(), "Closing DB");
         dbHelper.close();
     }
 
-
+    /**
+     * Get station info by its ID
+     *
+     * @param stationID
+     * @return
+     */
     public synchronized Station getStationByID(int stationID) {
         String where = MySQLiteHelper.COLUMN_STATION_ID + " = " + stationID + " LIMIT 1";
 
@@ -77,10 +96,16 @@ public class DepartureDataSource {
         return station;
     }
 
+    /**
+     * Get station ID by BTS ID
+     *
+     * @param cid
+     * @return
+     */
     public synchronized int getStationIDByCellID(int cid) {
         String where = MySQLiteHelper.COLUMN_BTS_ID + " = " + cid + " LIMIT 1";
 
-        Cursor cursor = database.query(MySQLiteHelper.TABLE_BTS_ANTENnAS, null, where, null, null, null, null);
+        Cursor cursor = database.query(MySQLiteHelper.TABLE_BTS_ANTENNAS, null, where, null, null, null, null);
         cursor.moveToFirst();
 
         int stationId = -1;

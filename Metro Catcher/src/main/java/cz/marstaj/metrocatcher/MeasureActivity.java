@@ -15,7 +15,11 @@ import cz.marstaj.metrocatcher.alg.MovementNeuralNetwork;
 import cz.marstaj.metrocatcher.model.ClassType;
 import cz.marstaj.metrocatcher.model.DataModel;
 
+/**
+ * FOR TESTING ONLY
+ */
 public class MeasureActivity extends ActionBarActivity {
+
 
     private static final String TAG = MeasureActivity.class.getSimpleName();
 
@@ -36,6 +40,7 @@ public class MeasureActivity extends ActionBarActivity {
     private ArrayList<Long> accTime;
     private ArrayList<Double> accData1;
     private ArrayList<Long> accTime1;
+    private MovementNeuralNetwork net;
     Runnable switchLists = new Runnable() {
         @Override
         public void run() {
@@ -51,7 +56,8 @@ public class MeasureActivity extends ActionBarActivity {
             onNewClassType(classType);
         }
     };
-    private MovementNeuralNetwork net;
+    private TerrainType activeTerrain = TerrainType.UNKNOWN;
+    private int classCount;
     Runnable switchLists1 = new Runnable() {
         @Override
         public void run() {
@@ -67,8 +73,6 @@ public class MeasureActivity extends ActionBarActivity {
             onNewClassType(classType);
         }
     };
-    private TerrainType activeTerrain = TerrainType.UNKNOWN;
-    private int classCount;
     private int classCountError;
     private double meters;
     private boolean wasStep1 = false;

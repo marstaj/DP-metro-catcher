@@ -23,7 +23,14 @@ import cz.marstaj.metrocatcher.util.LocalBinder;
  */
 public class ScanService extends Service {
 
+    /**
+     * Service TAG
+     */
     private final String TAG = ScanService.class.getSimpleName();
+
+    /**
+     * Listener for switching between BTS antenas
+     */
     PhoneStateListener cellListener = new PhoneStateListener() {
         @Override
         public void onCellLocationChanged(CellLocation location) {
@@ -35,10 +42,30 @@ public class ScanService extends Service {
             onNewCell((short) cellLocation.getCid());
         }
     };
+
+    /**
+     * Telephony manager
+     */
     private TelephonyManager tm;
+
+    /**
+     * Measure service intent
+     */
     private Intent measureServiceIntent;
+
+    /**
+     * Bounded measure service
+     */
     private MeasureService boundedMeasureService;
+
+    /**
+     * Flag wheter the service is running
+     */
     private boolean isMeasureServiceBound;
+
+    /**
+     * Measure service connection
+     */
     private ServiceConnection measureServiceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             Log.v(TAG, "MeasureService ServiceConnection onServiceConnected");
@@ -78,10 +105,15 @@ public class ScanService extends Service {
         return Service.START_STICKY;
     }
 
+    /**
+     * When new cell BTS is available
+     *
+     * @param cid
+     */
     private void onNewCell(int cid) {
         // TODO for other cells and stations
-        // 21297 is in Karlovo namesti in the subway station down there :) goes all the way up to vestibule
 
+        // 21297 is in Karlovo namesti in the subway station down there :) goes all the way up to vestibule
         if (cid == 21297) {
             if (!isMeasureServiceRunning()) {
                 notifyUser();
@@ -98,10 +130,17 @@ public class ScanService extends Service {
         }
     }
 
+    /**
+     * Whether is measureservice running or not
+     * @return
+     */
     public boolean isMeasureServiceRunning() {
         return MeasureService.isRunning;
     }
 
+    /**
+     * Notify user about localization start
+     */
     private void notifyUser() {
         NotificationManager mNotificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -154,23 +193,35 @@ public class ScanService extends Service {
         }
     }
 
+    /**
+     * Start and bind measure service
+     */
     private void startAndBindMeasureService() {
         Log.v(TAG, "MeasureService startAndBind");
         startService(measureServiceIntent);
         bindMeasureService();
     }
 
+    /**
+     *  Bind measure service
+     */
     private void bindMeasureService() {
         Log.v(TAG, "MeasureService bind");
         bindService(measureServiceIntent, measureServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
+    /**
+     * Stop and unbind measure service
+     */
     private void stopAndUnbindMeasureService() {
         Log.v(TAG, "MeasureService stopAndUnbindMeasureService");
         unbindMeasureService();
         stopService(measureServiceIntent);
     }
 
+    /**
+     * Unbind measure service
+     */
     private void unbindMeasureService() {
         Log.v(TAG, "MeasureService unbindMeasureService");
         unbindService(measureServiceConnection);

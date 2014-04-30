@@ -8,7 +8,6 @@ public class MyTime {
     int hours = 0;
     int minutes = 0;
     int seconds = 0;
-//    int milisecs = 0;
 
     public int getHours() {
         return hours;
@@ -16,7 +15,6 @@ public class MyTime {
 
     public void setHours(int hours) {
         this.hours = hours;
-//        refreshMilisecs();
     }
 
     public int getMinutes() {
@@ -25,7 +23,6 @@ public class MyTime {
 
     public void setMinutes(int minutes) {
         this.minutes = minutes;
-//        refreshMilisecs();
     }
 
     public int getSeconds() {
@@ -34,36 +31,12 @@ public class MyTime {
 
     public void setSeconds(int seconds) {
         this.seconds = seconds;
-//        refreshMilisecs();
     }
-
-//    public int getMilisecs() {
-//        return milisecs;
-//    }
-
-//    public void setMilisecs(int milisecs) {
-//        this.milisecs = milisecs;
-//        refreshTime();
-//    }
-
-//    private void refreshMilisecs() {
-//        this.milisecs = (hours * 3600 + minutes * 60 + seconds) * 1000;
-//    }
-
-//    private void refreshTime() {
-//        int tmp = milisecs / 1000;
-//        hours = tmp / 3600;
-//        tmp = (tmp - hours * 3600);
-//        minutes = tmp / 60;
-//        tmp = (tmp - minutes * 60);
-//        seconds = tmp;
-//    }
 
     public void setMinutesFromMidnight(int numberOfMinutesFromMidnight) {
         hours = numberOfMinutesFromMidnight / 60;
         minutes = numberOfMinutesFromMidnight - hours * 60;
         seconds = 0;
-//        refreshMilisecs();
     }
 
     public void setFromStrWithoutDelimiter(String stringTimeWithoutDelimiter) {

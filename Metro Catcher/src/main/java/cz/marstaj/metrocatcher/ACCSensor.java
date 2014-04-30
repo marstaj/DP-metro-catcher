@@ -9,7 +9,14 @@ import android.util.Log;
 
 public class ACCSensor {
 
+    /**
+     * Sensor manager
+     */
     private final SensorManager mSensorManager;
+
+    /**
+     * Accelerometer data listener
+     */
     SensorEventListener sensorListener = new SensorEventListener() {
 
         @Override
@@ -25,8 +32,20 @@ public class ACCSensor {
 
         }
     };
+
+    /**
+     * Context
+     */
     private Context context;
+
+    /**
+     * Accelerometer
+     */
     private Sensor mAccelerometer;
+
+    /**
+     * Accelerometer data received listener
+     */
     private OnACCReceivedListener onACCReceivedListener;
 
     public ACCSensor(Context context, OnACCReceivedListener onACCReceivedListener) {
@@ -35,12 +54,18 @@ public class ACCSensor {
         mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
     }
 
+    /**
+     * Start receiving accelerometer data
+     */
     public void start() {
         Log.v("ACCSensor", "start");
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mSensorManager.registerListener(sensorListener, mAccelerometer, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
+    /**
+     * Start receiving accelerometer data
+     */
     public void stop() {
         Log.v("ACCSensor", "stop");
         mSensorManager.unregisterListener(sensorListener);

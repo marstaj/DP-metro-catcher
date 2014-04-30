@@ -14,7 +14,12 @@ import cz.marstaj.metrocatcher.util.Util;
  */
 public class MySQLiteHelper extends SQLiteOpenHelper {
 
+
+    /**
+     * Departures table name
+     */
     public static final String TABLE_DEPARTURES = "departures";
+    // Departures table columns
     public static final String COLUMN_STATION_ID = "_id";
     public static final String COLUMN_STATION = "station";
     public static final String COLUMN_DIR_1_PO_CT = "direction1poct";
@@ -26,15 +31,28 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_DIR_2_SO = "direction2so";
     public static final String COLUMN_DIR_2_NE = "direction2ne";
 
-
-    public static final String TABLE_BTS_ANTENnAS = "bts_antennas";
+    /**
+     * BTS table name
+     */
+    public static final String TABLE_BTS_ANTENNAS = "bts_antennas";
+    // BTS table columns
     public static final String COLUMN_BTS_ID = "cell_id";
     public static final String COLUMN_BTS_STATION_ID = "station_id";
 
 
+    /**
+     * Database name
+     */
     private static final String DATABASE_NAME = "departures.db";
+
+    /**
+     * Database version
+     */
     private static final int DATABASE_VERSION = 1;
 
+    /**
+     * Context
+     */
     private Context context;
 
     public MySQLiteHelper(Context context) {
@@ -45,6 +63,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase database) {
         try {
+            // Parse SQL files and run them
             String departuresSQL = Util.readFromAssets(context, "departures.sql");
             String antennasSQL = Util.readFromAssets(context, "bts_antennas.sql");
             execSQLScript(database, departuresSQL);

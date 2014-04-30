@@ -5,9 +5,24 @@ package cz.marstaj.metrocatcher.alg;
  */
 public class MovementNeuralNetwork {
 
+    /**
+     * Bias values for hidden neuron layer
+     */
     private static double[] biases1 = null;
+
+    /**
+     * Bias for output neuron
+     */
     private static double bias2 = 0;
+
+    /**
+     * Weights for output neuron
+     */
     private static double[] layerWeights = null;
+
+    /**
+     * Weights for hidden neuron layer
+     */
     private static double[][] initialWeights = null;
 
     public MovementNeuralNetwork(double[][] initialWeights, double[] layerWeights, double[] biases1, double bias2) {
@@ -17,6 +32,12 @@ public class MovementNeuralNetwork {
         MovementNeuralNetwork.bias2 = bias2;
     }
 
+    /**
+     * Classify input data
+     *
+     * @param features Input data
+     * @return result of classification
+     */
     public double classifyMovement(double[] features) {
         double[] layerData = new double[initialWeights.length];
         for (int neuronIndex = 0; neuronIndex < initialWeights.length; neuronIndex++) {
@@ -35,7 +56,13 @@ public class MovementNeuralNetwork {
         return result;
     }
 
-    private double tansig(double n) {
-        return 2 / (1 + Math.pow(Math.E, -2 * n)) - 1;
+    /**
+     * Tangent sigmoid function
+     *
+     * @param input
+     * @return
+     */
+    private double tansig(double input) {
+        return 2 / (1 + Math.pow(Math.E, -2 * input)) - 1;
     }
 }

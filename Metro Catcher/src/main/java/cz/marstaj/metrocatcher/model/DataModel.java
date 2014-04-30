@@ -14,16 +14,45 @@ import java.util.ArrayList;
  */
 public class DataModel {
 
+    /**
+     * Weights for hidden neuron layer
+     */
     private static double[] layerWeights = null;
+
+    /**
+     * Weights for hidden neuron layer
+     */
     private static double[][] initialWeights = null;
+
+    /**
+     * Bias values for hidden neuron layer
+     */
     private static double[] biases1 = null;
+
+    /**
+     * Bias for output neuron
+     */
     private static Double bias2 = null;
+
+    /**
+     * Context
+     */
     private static Context context;
 
+    /**
+     * Data model initiation
+     *
+     * @param context
+     */
     public static void initWithContext(Context context) {
         DataModel.context = context;
     }
 
+    /**
+     * Return output neuron weights. Load them from file if necessary.
+     *
+     * @return
+     */
     public static double[] getLayerWeights() {
         if (layerWeights == null) {
             try {
@@ -36,6 +65,11 @@ public class DataModel {
         return layerWeights;
     }
 
+    /**
+     * Return hidden neuron layer weights. Load them from file if necessary.
+     *
+     * @return
+     */
     public static double[][] getInitialWeights() {
         if (initialWeights == null) {
             try {
@@ -48,6 +82,11 @@ public class DataModel {
         return initialWeights;
     }
 
+    /**
+     * Return hidden neuron layer biase values. Load them from file if necessary.
+     *
+     * @return
+     */
     public static double[] getBiases1() {
         if (biases1 == null) {
             try {
@@ -60,6 +99,11 @@ public class DataModel {
         return biases1;
     }
 
+    /**
+     * Return output neuron layer bias values. Load it from file if necessary.
+     *
+     * @return
+     */
     public static Double getBias2() {
         if (bias2 == null) {
             try {
@@ -72,6 +116,11 @@ public class DataModel {
         return bias2;
     }
 
+    /**
+     * Load all neuron related data from files
+     *
+     * @return Whether the data was loaded
+     */
     public static boolean loadAllData() {
         try {
             initialWeights = readIW(context);
@@ -85,7 +134,13 @@ public class DataModel {
         }
     }
 
-
+    /**
+     * Parse hidden neuron layer weights from file
+     *
+     * @param context
+     * @return
+     * @throws IOException
+     */
     private static double[][] readIW(Context context) throws IOException {
         AssetManager am = context.getAssets();
         InputStream is = am.open("netIW.txt");
@@ -112,6 +167,13 @@ public class DataModel {
         return result;
     }
 
+    /**
+     * Parse output neuron layer weights from file
+     *
+     * @param context
+     * @return
+     * @throws IOException
+     */
     private static double[] readLW(Context context) throws IOException {
         AssetManager am = context.getAssets();
         InputStream is = am.open("netLW.txt");
@@ -133,6 +195,13 @@ public class DataModel {
         return result;
     }
 
+    /**
+     * Parse hidden neuron layer bias values from file
+     *
+     * @param context
+     * @return
+     * @throws IOException
+     */
     private static double readB2(Context context) throws IOException {
         AssetManager am = context.getAssets();
         InputStream is = am.open("netB2.txt");
@@ -149,6 +218,13 @@ public class DataModel {
         return list.get(0);
     }
 
+    /**
+     * Parse output neuron bias from file
+     *
+     * @param context
+     * @return
+     * @throws IOException
+     */
     private static double[] readB1(Context context) throws IOException {
         AssetManager am = context.getAssets();
         InputStream is = am.open("netB1.txt");
